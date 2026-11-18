@@ -1,5 +1,8 @@
 # sqlite-zstd
 
+> [!CAUTION]
+> The tests currently do not work. I have just upgraded anything that was outdated and caused issues for me in my programs. I have not bothered to update the tests. They WILL fail. They are NOT reliable
+
 Extension for sqlite that provides transparent dictionary-based row-level compression for sqlite. This basically allows you to compress entries in a sqlite database almost as well as if you were compressing the whole DB file, but while retaining random access.
 
 See also the announcement blog post for some motivation, benchmarks and ramblings: https://phiresky.github.io/blog/2022/sqlite-zstd
