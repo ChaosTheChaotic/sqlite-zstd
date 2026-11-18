@@ -51,7 +51,7 @@ zstd = { version = "0.14.4", features = ["experimental"] }
 [dependencies.rusqlite]
 features = ["functions", "blob", "bundled", "array"]
 package = "rusqlite"
-version = "0.35.0"
+version = "0.43.0"
 
 [dev-dependencies]
 chrono = "0.4.19"

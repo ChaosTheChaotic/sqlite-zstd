@@ -118,13 +118,25 @@ pub(crate) fn zstd_decompress_fn<'a>(
     let arg_dict = 2;
     let arg_is_compact = 3;
 
+    let input_value = match ctx.get_raw(arg_data) {
+        ValueRef::Blob(b) => b,
+        ValueRef::Text(b) => b,
+        ValueRef::Null => return Ok(ToSqlOutput::Owned(Value::Null)), // pass through null
+        e => {
+            anyhow::bail!(
+                "zstd_compress expects blob or text as input, got {}",
+                e.data_type()
+            )
+        }
+    };
+
     if null_dict_is_passthrough && ctx.len() >= arg_dict {
         // if the dict id is null, pass through data
 
         if let ValueRef::Null = ctx.get_raw(arg_dict) {
             // TODO: figure out if sqlite3_result_blob can be passed a pointer into sqlite3_context to avoid copying??
             // return Ok(ToSqlOutput::Borrowed(ctx.get_raw(arg_data)));
-            return Ok(ToSqlOutput::Owned(ctx.get_raw(arg_data).into()));
+            return Ok(ToSqlOutput::Owned(Value::Blob(input_value.to_vec())));
         }
     }
 

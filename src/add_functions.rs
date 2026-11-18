@@ -9,12 +9,12 @@ pub fn add_functions(db: &rusqlite::Connection) -> anyhow::Result<()> {
     let nondeterministic = FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DIRECTONLY;
     let deterministic = FunctionFlags::SQLITE_UTF8 | FunctionFlags::SQLITE_DETERMINISTIC;
 
-    let zstd_compress = |ctx: &Context| zstd_compress_fn(ctx, false).map_err(ah);
-    let zstd_compress_col = |ctx: &Context| zstd_compress_fn(ctx, true).map_err(ah);
+    let zstd_compress = |ctx: &mut Context<'_>| zstd_compress_fn(ctx, false).map_err(ah);
+    let zstd_compress_col = |ctx: &mut Context<'_>| zstd_compress_fn(ctx, true).map_err(ah);
 
-    let zstd_decompress = |ctx: &Context| zstd_decompress_fn(ctx, false).map_err(ah);
-    let zstd_decompress_col = |ctx: &Context| zstd_decompress_fn(ctx, true).map_err(ah);
-    //
+    let zstd_decompress = |ctx: &mut Context<'_>| zstd_decompress_fn(ctx, false).map_err(ah);
+    let zstd_decompress_col = |ctx: &mut Context<'_>| zstd_decompress_fn(ctx, true).map_err(ah);
+
     db.create_scalar_function("zstd_compress", 1, deterministic, zstd_compress)?;
     db.create_scalar_function("zstd_compress", 2, deterministic, zstd_compress)?;
     db.create_scalar_function("zstd_compress", 3, deterministic, zstd_compress)?;
@@ -56,15 +56,26 @@ pub fn add_functions(db: &rusqlite::Connection) -> anyhow::Result<()> {
 #[cfg(test)]
 pub mod tests {
     use super::*;
-    use anyhow::Context;
+    use anyhow::Context as AnyhowContext;
     use chrono::TimeZone;
     pub use pretty_assertions::assert_eq;
+    use std::sync::LazyLock;
 
     use rusqlite::{Connection, params};
     use serde::{Deserialize, Serialize};
     use std::collections::BTreeMap;
 
-    // the point of this is that it's something you might store in a DB that has lots of redundant data
+    static APP_NAMES: LazyLock<Vec<String>> = LazyLock::new(|| {
+        names::Generator::with_naming(names::Name::Plain)
+            .take(100)
+            .collect()
+    });
+    static APP_TYPES: LazyLock<Vec<String>> = LazyLock::new(|| {
+        names::Generator::with_naming(names::Name::Plain)
+            .take(10)
+            .collect()
+    });
+
     #[derive(Serialize, Deserialize, Debug)]
     #[serde(tag = "type")]
     enum EventData {
@@ -82,16 +93,6 @@ pub mod tests {
 
     pub fn create_example_db(seed: Option<u64>, eles: i32) -> anyhow::Result<Connection> {
         let seed = seed.unwrap_or_else(|| thread_rng().r#gen());
-        lazy_static::lazy_static! {
-            // people use maybe 100 different apps
-            static ref APP_NAMES: Vec<String> = names::Generator::with_naming(names::Name::Plain)
-            .take(100)
-            .collect();
-            // of maybe 10 different categories
-            static ref APP_TYPES: Vec<String> = names::Generator::with_naming(names::Name::Plain)
-                .take(10)
-                .collect();
-        };
         let mut db = if std::env::var("TEST_TO_FILE").is_ok() {
             let db_fname = format!(
                 "/tmp/foo.{}.sqlite3",
@@ -355,10 +356,6 @@ pub mod tests {
     #[test]
     fn levels() -> anyhow::Result<()> {
         let db = create_example_db(None, 5)?;
-        /*db.prepare("select * from events")?
-        .query_map(params![], |r| Ok(debug_row(r)))?
-        .count();*/
-
         let mut st = db.prepare("select data from events")?;
         let eles: Vec<String> = st
             .query_map(params![], |r| r.get(0))
@@ -366,7 +363,6 @@ pub mod tests {
             .collect::<Result<_, _>>()?;
 
         for ele in eles {
-            // let mut last_size = usize::MAX;
             for level in 1..24 {
                 let compressed1: Vec<u8> = db
                     .query_row("select zstd_compress(?, ?)", params![ele, level], |r| {
@@ -383,8 +379,6 @@ pub mod tests {
 
                 assert_eq!(ele, decompressed1);
                 println!("l={}, size={}", level, compressed1.len());
-                // assert!(compressed1.len() <= last_size);
-                // last_size = compressed1.len();
             }
         }
 
