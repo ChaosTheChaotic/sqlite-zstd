@@ -29,10 +29,10 @@ name = "create_test_db"
 required-features = ["benchmark"]
 
 [lib]
-crate-type = ["cdylib"]
+crate-type = ["rlib", "cdylib"]
 
 [dependencies]
-zstd = {version = "0.11.2", features = ["experimental"]}
+#zstd = {version = "0.11.2", features = ["experimental"]}
 #zstd = {version = "0.5.3", path="../zstd-rs"}
 #zstd = {version = "=0.5.4"}
 anyhow = "1.0.44"
@@ -48,6 +48,7 @@ owning_ref = "0.4.1"
 procfs = {version = "0.13.2", optional = true}
 rand = "0.8.4"
 structopt = {version = "0.3.23", optional = true}
+zstd = { version = "0.14.4", features = ["experimental"] }
 
 [dependencies.rusqlite]
 features = ["functions", "blob", "bundled", "array"]
