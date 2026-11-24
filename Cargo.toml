@@ -10,13 +10,14 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = []
+default = ["bundled", "logging"]
+bundled = ["rusqlite/bundled"]
+logging = ["dep:env_logger"]
+benchmark = ["structopt", "procfs", "rusqlite/backup", "rusqlite/load_extension", "csv", "logging"]
 
 build_extension = ["rusqlite/loadable_extension"]
 
 # debug_zstd = ["zstd/debug"]
-
-benchmark = ["structopt", "procfs", "rusqlite/backup", "rusqlite/load_extension", "csv"]
 
 all = ["benchmark"]
 
@@ -40,7 +41,7 @@ serde = {version = "1.0.130", features = ["derive"]}
 serde_json = "1.0.68"
 
 csv = {version = "1.1.6", optional = true}
-env_logger = "0.9.0"
+env_logger = { version = "0.9.0", optional = true }
 log = "0.4.14"
 lru_time_cache = "0.11.11"
 procfs = {version = "0.13.2", optional = true}
@@ -49,7 +50,7 @@ structopt = {version = "0.3.23", optional = true}
 zstd = { version = "0.14.4", features = ["experimental"] }
 
 [dependencies.rusqlite]
-features = ["functions", "blob", "bundled", "array"]
+features = ["functions", "blob", "array"]
 package = "rusqlite"
 version = "0.43.0"
 

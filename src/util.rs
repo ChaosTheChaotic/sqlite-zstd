@@ -61,6 +61,7 @@ pub fn escape_sqlite_identifier(identifier: &str) -> String {
     format!("`{}`", identifier.replace('`', "``"))
 }
 
+#[cfg(feature = "logging")]
 pub fn init_logging(default_level: LevelFilter) {
     if std::env::var("SQLITE_ZSTD_LOG").is_err() {
         // TODO: Audit that the environment access only happens in single-threaded code.
@@ -68,3 +69,6 @@ pub fn init_logging(default_level: LevelFilter) {
     }
     env_logger::try_init_from_env(env_logger::Env::new().filter("SQLITE_ZSTD_LOG")).ok();
 }
+
+#[cfg(not(feature = "logging"))]
+pub fn init_logging(_default_level: LevelFilter) {}
