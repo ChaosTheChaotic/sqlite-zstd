@@ -979,9 +979,9 @@ mod tests {
     use rusqlite::{Connection, Row};
 
     fn row_to_thong(r: &Row) -> anyhow::Result<Vec<Value>> {
-        Ok((0..r.as_ref().column_count())
-            .map(|i| r.get_ref(i).map(|e| e.into()))
-            .collect::<Result<_, _>>()?)
+        (0..r.as_ref().column_count())
+            .map(|i| r.get::<_, Value>(i).map_err(Into::into))
+            .collect()
     }
 
     fn get_whole_table(db: &Connection, tbl_name: &str) -> anyhow::Result<Vec<Vec<Value>>> {
