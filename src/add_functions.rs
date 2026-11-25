@@ -178,7 +178,7 @@ pub mod tests {
                 let mut insert = tx.prepare(
                     "insert into events (timestamp, data, another_col) values (?, ?, ?)",
                 )?;
-                let date = chrono::Utc.ymd(2021, 1, 1).and_hms(0, 0, 0);
+                let date = chrono::Utc.with_ymd_and_hms(2021, 1, 1, 0, 0, 0).single().unwrap_or_else(|| panic!("impossible")); // Should be impossible as we give it a set time for it to use
                 for (i, d) in data.enumerate() {
                     insert.execute(params![
                         (date + chrono::Duration::seconds(30) * (i as i32)).to_rfc3339(),
